@@ -1,5 +1,5 @@
 @echo off
-set "SOURCE_FILES=test_bench.c vec_input_streamer.c"
+set "SOURCE_FILES=test_bench.c vec_input_streamer.c add_position_to_vec.c"
 set "FPGA_OUTPUT_NAME=ver_1"
 set "FPGA_FLAGS=--quartus-compile"
 set "CLOCK_FLAG=--clock 50MHz"
