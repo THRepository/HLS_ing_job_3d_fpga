@@ -14,6 +14,7 @@
 #endif
 
 #include "vec_input_streamer.h"
+#include "add_position_to_vec.h"
 
 #include <math.h>
 #include <stdlib.h>
