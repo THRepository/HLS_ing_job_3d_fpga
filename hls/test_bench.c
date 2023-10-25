@@ -1,32 +1,4 @@
-#include <math.h>
-#include <stdlib.h>
-
-#include "HLS/hls.h"
-
-    typedef struct vector_3d{
-        float x;
-        float y;
-        float z;
-    }vec_3d;
-
-    typedef struct polygon_3s{
-        vec_3d tri[3];
-        vec_3d normal;
-        float vissibility;
-    }triangle;
-
-    typedef struct mesh_of_triangles_to_cube{
-        triangle tris[12];
-        vec_3d pos;
-    }mesh_cube;
-
-    typedef struct m_3x3{
-        float matrix[3][3];
-    }matrix_3x3;
-
-    typedef struct m_4x4{
-        float matrix[4][4];
-    }matrix_4x4;
+#include "test_bench.h"
 
 float cross_product(vec_3d* v1, vec_3d* v2)
 {
@@ -102,13 +74,13 @@ void rotate_3d(vec_3d* p0, vec_3d* p, float Phi, float Theta, float Psi)
     p->y = new_vec_rotate.y;
     p->z = new_vec_rotate.z;
 
-    /*
+    
     x'(Phi)   = x(cos(Theta) * cos(Psi)) + y(sin(Phi) * sin(Theta) * cos(Psi) - cos(Phi) * sin(Psi)) + z(cos(Phi) * sin(Theta) * cos(Psi) + sin(Phi) * sin(Psi))
 	y'(Theta) = x(cos(Theta) * sin(Psi)) + y(sin(Phi) * sin(Theta) * sin(Psi) + cos(Phi) * cos(Psi)) + z(cos(Phi) * sin(Theta) * sin(Psi) - sin(Phi) * cos(Phi))
-	z'(Psi)   = x(-sin(Theta)) + y(sin(Phi) * cos(Theta)) + z( cos(Phi) * cos(Theta))*/
+	z'(Psi)   = x(-sin(Theta)) + y(sin(Phi) * cos(Theta)) + z( cos(Phi) * cos(Theta))
 
 //}
-
+*/
 
 void rotate_triangle(vec_3d* p0, triangle* t, float Phi, float Theta, float Psi)
 {
@@ -265,8 +237,69 @@ void position_cube(mesh_cube* c)
 
 int main()
 {
+    float samples[sample_size] = {
+                            0.0, 0.0, 0.0, // South 1
+                            0.0, 1.0, 0.0,
+                            1.0, 1.0, 0.0,
 
-    mesh_cube c1, c2, c3, c1_projected, c2_projected, c3_projected;
+                            0.0, 0.0, 0.0, // South 2
+                            1.0, 1.0, 0.0,
+                            1.0, 0.0, 0.0,
+
+                            1.0, 0.0, 0.0, // East 1
+                            1.0, 1.0, 0.0,
+                            1.0, 1.0, 1.0,
+
+                            1.0, 0.0, 0.0, // East 2
+                            1.0, 1.0, 1.0,
+                            1.0, 0.0, 1.0,
+
+                            1.0, 0.0, 1.0, // North 1
+                            1.0, 1.0, 1.0,
+                            0.0, 1.0, 1.0,
+
+                            1.0, 0.0, 1.0, // North 2
+                            0.0, 1.0, 1.0,
+                            0.0, 0.0, 1.0,
+
+                            0.0, 0.0, 1.0, // West 1
+                            0.0, 1.0, 1.0,
+                            0.0, 1.0, 0.0,
+
+                            0.0, 0.0, 1.0, // West 2
+                            0.0, 1.0, 0.0,
+                            0.0, 0.0, 0.0,
+
+                            0.0, 1.0, 0.0, // Top 1
+                            0.0, 1.0, 1.0,
+                            1.0, 1.0, 1.0,
+
+                            0.0, 1.0, 0.0, // Top 2
+                            1.0, 1.0, 1.0,
+                            1.0, 1.0, 0.0,
+
+                            1.0, 0.0, 1.0, // Bot 1
+                            0.0, 0.0, 1.0,
+                            0.0, 0.0, 0.0,
+
+                            1.0, 0.0, 1.0, // Bot 2
+                            0.0, 0.0, 0.0,
+                            1.0, 0.0, 0.0,
+                        };
+    vec_3d samples_from_input_0[num_triangles];
+    vec_3d samples_from_input_1[num_triangles];
+    vec_3d samples_from_input_2[num_triangles];
+
+    //streams
+    ihc::stream_out<vec_3d> stream_from_input_0;
+    ihc::stream_out<vec_3d> stream_from_input_1;
+    ihc::stream_out<vec_3d> stream_from_input_2;
+
+    // mm_master interface class instance
+    ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<32> > in_tb(samples, sizeof(float)*108);
+
+///// Prepere sofware cube
+    mesh_cube c1, c1_projected;
 
     // South //
     c1.tris[0].tri[0].x =  0.0; c1.tris[0].tri[0].y =  0.0; c1.tris[0].tri[0].z =  0.0;
@@ -343,7 +376,7 @@ int main()
     //matrix_3x3 projection_matrix;
     //ini_projection_3(maxx, maxy, M_PI/2, Zfar, Znear, &projection_matrix);
     matrix_4x4 projection_matrix;
-    ini_projection_4(maxx, maxy, M_PI/2, Zfar, Znear, &projection_matrix);
+    ini_projection_4(maxx, maxy, PI/2, Zfar, Znear, &projection_matrix);
 
     vec_3d camera;
     camera.x = 0.0; camera.y = 0.0; camera.z = 0.0;
@@ -351,10 +384,57 @@ int main()
     float t = 0.0;
 
     c1_projected = c1;
+///// Prepere sofware cube done
+
+    printf("Test start!\n");
+
+    //Test input streamer for vectors
+    vec_input(in_tb, stream_from_input_0, stream_from_input_1, stream_from_input_2, sample_size);
+    for (int i = 0; i < num_triangles;i++){
+        samples_from_input_0[i] = stream_from_input_0.read();// Read output-stream
+        samples_from_input_1[i] = stream_from_input_1.read();// Read output-stream
+        samples_from_input_2[i] = stream_from_input_2.read();// Read output-stream
+    }
+
+    int errors = 0;
+    for(int i = 0; i < num_triangles;i++)
+    {
+        if(samples_from_input_0[i].x != c1_projected.tris[i].tri[0].x)
+            errors++;
+        if(samples_from_input_0[i].y != c1_projected.tris[i].tri[0].y)
+            errors++;
+        if(samples_from_input_0[i].z != c1_projected.tris[i].tri[0].z)
+            errors++;
+        // printf("x = %.6f | %.6f\n", samples_from_input_0[i].x, c1_projected.tris[i].tri[0].x);
+        // printf("y = %.6f | %.6f\n", samples_from_input_0[i].y, c1_projected.tris[i].tri[0].y);
+        // printf("z = %.6f | %.6f\n", samples_from_input_0[i].z, c1_projected.tris[i].tri[0].z);
+        
+        if(samples_from_input_1[i].x != c1_projected.tris[i].tri[1].x)
+            errors++;
+        if(samples_from_input_1[i].y != c1_projected.tris[i].tri[1].y)
+            errors++;
+        if(samples_from_input_1[i].z != c1_projected.tris[i].tri[1].z)
+            errors++;
+        // printf("x = %.6f | %.6f\n", samples_from_input_1[i].x, c1_projected.tris[i].tri[1].x);
+        // printf("y = %.6f | %.6f\n", samples_from_input_1[i].y, c1_projected.tris[i].tri[1].y);
+        // printf("z = %.6f | %.6f\n", samples_from_input_1[i].z, c1_projected.tris[i].tri[1].z);
+
+        if(samples_from_input_2[i].x != c1_projected.tris[i].tri[2].x)
+            errors++;
+        if(samples_from_input_2[i].y != c1_projected.tris[i].tri[2].y)
+            errors++;
+        if(samples_from_input_2[i].z != c1_projected.tris[i].tri[2].z)
+            errors++; 
+        // printf("x = %.6f | %.6f\n", samples_from_input_2[i].x, c1_projected.tris[i].tri[2].x);
+        // printf("y = %.6f | %.6f\n", samples_from_input_2[i].y, c1_projected.tris[i].tri[2].y);
+        // printf("z = %.6f | %.6f\n", samples_from_input_2[i].z, c1_projected.tris[i].tri[2].z);
+        // printf("\n");
+    }
+    printf("Number of errors in input streamer is : %d\n", errors);
 
     position_cube(&c1_projected);
 
-    rotate_cube(&c1_projected, t*(-M_PI/32), t*(-M_PI/16), 0.0, &custom_reference);
+    rotate_cube(&c1_projected, t*(-PI/32), t*(-PI/16), 0.0, &custom_reference);
 
     cross_product_on_all(&c1_projected);
 
@@ -363,6 +443,6 @@ int main()
     projection_on_cube(maxx, maxy, Zfar, &projection_matrix, &c1_projected);
 
 
-
+    printf("Test complete!\n");
     return 0;
 }
