@@ -13,8 +13,7 @@
     }vec_3d;
 #endif
 
-#include "vec_input_streamer.h"
-#include "add_position_to_vec.h"
+#include "gpu_vec_to_3d.h"
 
 #include <math.h>
 #include <stdlib.h>
