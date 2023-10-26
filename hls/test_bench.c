@@ -286,6 +286,8 @@ int main()
                             0.0, 0.0, 0.0,
                             1.0, 0.0, 0.0,
                         };
+    float sample_prossesed[sample_size];
+
     vec_3d samples_from_input_0[num_triangles];
     vec_3d samples_from_input_1[num_triangles];
     vec_3d samples_from_input_2[num_triangles];
@@ -308,6 +310,9 @@ int main()
 
     // mm_master interface class instance
     ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<32> > in_tb(samples, sizeof(float)*108);
+
+    ihc::mm_master<float, ihc::aspace<3>, ihc::awidth<32>, ihc::dwidth<32> > in_vecs(samples, sizeof(float)*108);
+    ihc::mm_master<float, ihc::aspace<2>, ihc::awidth<32>, ihc::dwidth<32> > out_vecs(sample_prossesed, sizeof(float)*108);
 
 ///// Prepere sofware cube
     mesh_cube c1, c1_projected;
@@ -399,88 +404,39 @@ int main()
 
     printf("Test start!\n");
 
-    //Test input streamer for vectors
-    vec_input(in_tb, stream_from_input_0, stream_from_input_1, stream_from_input_2, sample_size);
-    for (int i = 0; i < num_triangles;i++){
-        samples_from_input_0[i] = stream_from_input_0.read();// Read output-stream
-        samples_from_input_1[i] = stream_from_input_1.read();// Read output-stream
-        samples_from_input_2[i] = stream_from_input_2.read();// Read output-stream
-    }
-
-    int errors = 0;
-    for(int i = 0; i < num_triangles;i++)
-    {
-        if(samples_from_input_0[i].x != c1_projected.tris[i].tri[0].x)
-            errors++;
-        if(samples_from_input_0[i].y != c1_projected.tris[i].tri[0].y)
-            errors++;
-        if(samples_from_input_0[i].z != c1_projected.tris[i].tri[0].z)
-            errors++;
-        
-        if(samples_from_input_1[i].x != c1_projected.tris[i].tri[1].x)
-            errors++;
-        if(samples_from_input_1[i].y != c1_projected.tris[i].tri[1].y)
-            errors++;
-        if(samples_from_input_1[i].z != c1_projected.tris[i].tri[1].z)
-            errors++;
-
-        if(samples_from_input_2[i].x != c1_projected.tris[i].tri[2].x)
-            errors++;
-        if(samples_from_input_2[i].y != c1_projected.tris[i].tri[2].y)
-            errors++;
-        if(samples_from_input_2[i].z != c1_projected.tris[i].tri[2].z)
-            errors++; 
-    }
-    printf("Number of errors in input streamer is : %d\n", errors);
-
     // Test set positions on vectors.
     position_cube(&c1_projected);
 
-    for (int i = 0; i < num_triangles;i++){
-        stream_to_add_0.write(samples_from_input_0[i]); // Write input-stream
-        stream_to_add_1.write(samples_from_input_1[i]); // Write input-stream
-        stream_to_add_2.write(samples_from_input_2[i]); // Write input-stream
-    }
-    for (int i = 0; i < num_triangles;i++){
-        ihc_hls_enqueue_noret(*add_to_vec, 
-                               stream_to_add_0, stream_to_add_1, stream_to_add_2,
-                               stream_from_add_0, stream_from_add_1, stream_from_add_2,
-                               c1.pos.x, c1.pos.y, c1.pos.z);
-    }
-    ihc_hls_component_run_all(add_to_vec);
+    gpu_3d(in_vecs, 0, sample_size, c1.pos.x, c1.pos.y, c1.pos.z, out_vecs);
 
-    for (int i = 0; i < num_triangles;i++){
-        samples_from_add_0[i] = stream_from_add_0.read();// Read output-stream
-        samples_from_add_1[i] = stream_from_add_1.read();// Read output-stream
-        samples_from_add_2[i] = stream_from_add_2.read();// Read output-stream
-    }
-
-    errors = 0;
-    for(int i = 0; i < num_triangles;i++)
+    int loop = 0;
+    int errors = 0;
+    for(int i = 0; i < sample_size;)
     {
-        if(samples_from_add_0[i].x != c1_projected.tris[i].tri[0].x)
+        //printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].x);
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[0].x)
             errors++;
-        if(samples_from_add_0[i].y != c1_projected.tris[i].tri[0].y)
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[0].y)
             errors++;
-        if(samples_from_add_0[i].z != c1_projected.tris[i].tri[0].z)
-            errors++;
-        
-        if(samples_from_add_1[i].x != c1_projected.tris[i].tri[1].x)
-            errors++;
-        if(samples_from_add_1[i].y != c1_projected.tris[i].tri[1].y)
-            errors++;
-        if(samples_from_add_1[i].z != c1_projected.tris[i].tri[1].z)
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[0].z)
             errors++;
 
-        if(samples_from_add_2[i].x != c1_projected.tris[i].tri[2].x)
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[1].x)
             errors++;
-        if(samples_from_add_2[i].y != c1_projected.tris[i].tri[2].y)
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[1].y)
             errors++;
-        if(samples_from_add_2[i].z != c1_projected.tris[i].tri[2].z)
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[1].z)
+            errors++;
+
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[2].x)
+            errors++;
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[2].y)
+            errors++;
+        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[2].z)
             errors++; 
+        loop += 1;
     }
-    printf("Number of errors in position of vectors is : %d\n", errors);
-
+    printf("Number of errors in 3d vector processes is : %d\n", errors);
 
     rotate_cube(&c1_projected, t*(-PI/32), t*(-PI/16), 0.0, &custom_reference);
 
