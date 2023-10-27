@@ -413,6 +413,8 @@ int main()
     // Test set positions on vectors.
     position_cube(&c1_projected);
     rotate_cube(&c1_projected, PI/32, PI/16, PI/8, &custom_reference);
+    cross_product_on_all(&c1_projected);
+    in_camera_vision(&c1_projected, &camera);
 
     gpu_3d(in_vecs, 0, sample_size, 
            c1.pos.x, c1.pos.y, c1.pos.z, 
@@ -422,62 +424,63 @@ int main()
     int loop = 0;
     int errors = 0;
     float dif = 0.0;
-    for(int i = 0; i < sample_size;)
+    for(int i = 0; i < sample_size && loop < 12;)
     {
-        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].x);
-        dif = sample_prossesed[i++] - c1_projected.tris[loop].tri[0].x;
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
-        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].y);
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[0].y;
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[0].z; 
-        // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].z);
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
+        if(c1_projected.tris[loop].vissibility < 0.0)
+        {
+            // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].x);
+            dif = sample_prossesed[i++] - c1_projected.tris[loop].tri[0].x;
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
+            // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].y);
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[0].y;
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[0].z; 
+            // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].z);
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
 
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].x; 
-        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].x);
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].y; 
-        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].y);
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].z; 
-        // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].z);
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].x; 
+            // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].x);
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].y; 
+            // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].y);
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].z; 
+            // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].z);
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
 
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].x;
-        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].x);
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].y; 
-        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].y);
-        if(dif > 1.0 || dif < -1.0){
-            errors++;
-            }
-        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].z; 
-        // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].z);
-        if(dif > 1.0 || dif < -1.0){
-            errors++; 
-            }
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].x;
+            // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].x);
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].y; 
+            // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].y);
+            if(dif > 1.0 || dif < -1.0){
+                errors++;
+                }
+            dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].z; 
+            // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].z);
+            if(dif > 1.0 || dif < -1.0){
+                errors++; 
+                }
+        }else{
+
+        }
         loop += 1;
     }
     printf("Number of errors in 3d vector processes is : %d\n", errors);
-
-    cross_product_on_all(&c1_projected);
-
-    in_camera_vision(&c1_projected, &camera);
 
     projection_on_cube(maxx, maxy, Zfar, &projection_matrix, &c1_projected);
 

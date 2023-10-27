@@ -4,6 +4,7 @@
         "cmath": "c",
         "test_bench.h": "c",
         "algorithm": "c",
-        "gpu_vec_to_3d.h": "c"
+        "gpu_vec_to_3d.h": "c",
+        "queue": "c"
     }
 }

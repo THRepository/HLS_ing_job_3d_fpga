@@ -5,6 +5,12 @@
 #ifndef PROJECT_SHARED_INC_DEF_FIR_FILTER_
 #define PROJECT_SHARED_INC_DEF_FIR_FILTER_
     #include "HLS/hls.h"
+
+    typedef struct vector_3d{
+        float x;
+        float y;
+        float z;
+    }vec_3d;
 #endif
 
 #include "HLS/math.h"
