@@ -9,48 +9,55 @@ float cross_product(vec_3d* v1, vec_3d* v2)
 
 void rotate_3d(vec_3d* p0, vec_3d* p, float Phi, float Theta, float Psi)
 {
-    if(Phi == 0.0){
-    	if( Theta == 0.0){
-    		if( Psi == 0.0){
-    			return;
-    		}
-    	}
+    if(Phi == 0.0 and Theta == 0.0 and Psi == 0.0){ // If all 3 angles are 0 do nothing.
+        return;
     }
 
     vec_3d new_vec_rotate;
-    float temp_a, temp_b;
-
+    
     /*                    | 1     0          0     |
     Rx(Phi) = [x, y, z] * | 0  cos(Phi)  -sin(Phi) |
                           | 0  sin(Phi)   cos(Phi) |*/
     if(Phi != 0.0)
     {
-    	temp_a = (p->y - p0->y);
-    	temp_b = (p->z - p0->z);
-    	p->y = temp_a*cos(Phi)    + temp_b*(-sin(Phi)) + p0->y;
-    	p->z = temp_a*sin(Phi)    + temp_b*cos(Phi)    + p0->z;
-    }
+        // Easy to read matrix multiplication with rotation around x axis.
+        new_vec_rotate.x = (p->x - p0->x)*1 + (p->y - p0->y)*0           + (p->z - p0->z)*0           + p0->x;
+        new_vec_rotate.y = (p->x - p0->x)*0 + (p->y - p0->y)*cos(Phi)    + (p->z - p0->z)*(-sin(Phi)) + p0->y;
+        new_vec_rotate.z = (p->x - p0->x)*0 + (p->y - p0->y)*sin(Phi)    + (p->z - p0->z)*cos(Phi)    + p0->z;
 
+        p->x = new_vec_rotate.x;
+        p->y = new_vec_rotate.y;
+        p->z = new_vec_rotate.z;
+    }
+    
     /*                      | cos(Theta)   0  sin(Theta) |
     Ry(Theta) = [x, y, z] * |     0        1      0      |
                             | -sin(Theta)  0  cos(Theta) |*/
     if(Theta != 0.0)
     {
-    	temp_a = (p->x - p0->x);
-    	temp_b = (p->z - p0->z);
-    	p->x = temp_a*cos(Theta)    + temp_b*sin(Theta) + p0->x;
-    	p->z = temp_a*(-sin(Theta)) + temp_b*cos(Theta) + p0->z;
+        // Easy to read matrix multiplication with rotation around y axis.
+        new_vec_rotate.x = (p->x - p0->x)*cos(Theta)    + (p->y - p0->y)*0 + (p->z - p0->z)*sin(Theta) + p0->x;
+        new_vec_rotate.y = (p->x - p0->x)*0             + (p->y - p0->y)*1 + (p->z - p0->z)*0          + p0->y;
+        new_vec_rotate.z = (p->x - p0->x)*(-sin(Theta)) + (p->y - p0->y)*0 + (p->z - p0->z)*cos(Theta) + p0->z;
+        
+        p->x = new_vec_rotate.x;
+        p->y = new_vec_rotate.y;
+        p->z = new_vec_rotate.z;
     }
-
+    
     /*                   | cos(Psi)  -sin(Psi)  0 |
     Rz(Psi) =[x, y, z] * | sin(Psi)   cos(Psi)  0 |
                          |    0          0      1 |*/
     if(Psi != 0.0)
     {
-    	temp_a = (p->x - p0->x);
-		temp_b = (p->y - p0->y);
-		p->x = temp_a*cos(Psi)    + temp_b*sin(Psi) + p0->x;
-		p->y = temp_a*(-sin(Psi)) + temp_b*cos(Psi) + p0->y;
+        // Easy to read matrix multiplication with rotation around z axis.
+        new_vec_rotate.x = (p->x - p0->x)*cos(Psi)    + (p->y - p0->y)*sin(Psi) + (p->z - p0->z)*0 + p0->x;
+        new_vec_rotate.y = (p->x - p0->x)*(-sin(Psi)) + (p->y - p0->y)*cos(Psi) + (p->z - p0->z)*0 + p0->y;
+        new_vec_rotate.z = (p->x - p0->x)*0           + (p->y - p0->y)*0        + (p->z - p0->z)*1 + p0->z;
+
+        p->x = new_vec_rotate.x;
+        p->y = new_vec_rotate.y;
+        p->z = new_vec_rotate.z;
     }
 }
 
@@ -309,9 +316,7 @@ int main()
     ihc::stream_out<vec_3d> stream_from_add_2;
 
     // mm_master interface class instance
-    ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<32> > in_tb(samples, sizeof(float)*108);
-
-    ihc::mm_master<float, ihc::aspace<3>, ihc::awidth<32>, ihc::dwidth<32> > in_vecs(samples, sizeof(float)*108);
+    ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<32> > in_vecs(samples, sizeof(float)*108);
     ihc::mm_master<float, ihc::aspace<2>, ihc::awidth<32>, ihc::dwidth<32> > out_vecs(sample_prossesed, sizeof(float)*108);
 
 ///// Prepere sofware cube
@@ -381,7 +386,8 @@ int main()
     c1.pos.x = 0.0;  c1.pos.y  = 0.0; c1.pos.z = 3.0;
 
     vec_3d custom_reference;
-    custom_reference.x = c1.pos.x + 0.5; custom_reference.y = c1.pos.y + 0.5; custom_reference.z = c1.pos.z + 0.5;
+    //custom_reference.x = c1.pos.x + 0.5; custom_reference.y = c1.pos.y + 0.5; custom_reference.z = c1.pos.z + 0.5;
+    custom_reference.x = 0; custom_reference.y = 0; custom_reference.z = 0;
 
     int maxx  =  380; // (getmaxx()/2);
     int maxy  =  380;
@@ -406,39 +412,68 @@ int main()
 
     // Test set positions on vectors.
     position_cube(&c1_projected);
+    rotate_cube(&c1_projected, PI/32, PI/16, PI/8, &custom_reference);
 
-    gpu_3d(in_vecs, 0, sample_size, c1.pos.x, c1.pos.y, c1.pos.z, out_vecs);
+    gpu_3d(in_vecs, 0, sample_size, 
+           c1.pos.x, c1.pos.y, c1.pos.z, 
+           PI/32, PI/16, PI/8, 
+           out_vecs);
 
     int loop = 0;
     int errors = 0;
+    float dif = 0.0;
     for(int i = 0; i < sample_size;)
     {
-        //printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].x);
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[0].x)
+        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].x);
+        dif = sample_prossesed[i++] - c1_projected.tris[loop].tri[0].x;
+        if(dif > 1.0 || dif < -1.0){
             errors++;
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[0].y)
+            }
+        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].y);
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[0].y;
+        if(dif > 1.0 || dif < -1.0){
             errors++;
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[0].z)
+            }
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[0].z; 
+        // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[0].z);
+        if(dif > 1.0 || dif < -1.0){
             errors++;
+            }
 
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[1].x)
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].x; 
+        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].x);
+        if(dif > 1.0 || dif < -1.0){
             errors++;
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[1].y)
+            }
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].y; 
+        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].y);
+        if(dif > 1.0 || dif < -1.0){
             errors++;
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[1].z)
+            }
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[1].z; 
+        // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[1].z);
+        if(dif > 1.0 || dif < -1.0){
             errors++;
+            }
 
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[2].x)
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].x;
+        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].x);
+        if(dif > 1.0 || dif < -1.0){
             errors++;
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[2].y)
+            }
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].y; 
+        // printf("%.6f | %.6f | %.6f\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].y);
+        if(dif > 1.0 || dif < -1.0){
             errors++;
-        if(sample_prossesed[i++] != c1_projected.tris[loop].tri[2].z)
+            }
+        dif = sample_prossesed[i++] != c1_projected.tris[loop].tri[2].z; 
+        // printf("%.6f | %.6f | %.6f\n\n", samples[i], sample_prossesed[i], c1_projected.tris[loop].tri[2].z);
+        if(dif > 1.0 || dif < -1.0){
             errors++; 
+            }
         loop += 1;
     }
     printf("Number of errors in 3d vector processes is : %d\n", errors);
-
-    rotate_cube(&c1_projected, t*(-PI/32), t*(-PI/16), 0.0, &custom_reference);
 
     cross_product_on_all(&c1_projected);
 

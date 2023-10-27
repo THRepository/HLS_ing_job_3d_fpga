@@ -3,6 +3,7 @@
         "add_position_to_vec.h": "c",
         "cmath": "c",
         "test_bench.h": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "gpu_vec_to_3d.h": "c"
     }
 }
