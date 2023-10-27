@@ -72,8 +72,8 @@ void gpu_3d(ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<3
 
         // Collect vectors for one triangle.
         tri_buffer[tri_buffer_counter].x = vec[0];
-        tri_buffer[tri_buffer_counter].x = vec[1];
-        tri_buffer[tri_buffer_counter].x = vec[2];
+        tri_buffer[tri_buffer_counter].y = vec[1];
+        tri_buffer[tri_buffer_counter].z = vec[2];
 
         
         if(tri_buffer_counter < 2){
@@ -83,30 +83,28 @@ void gpu_3d(ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<3
             b.x = tri_buffer[1].x - tri_buffer[0].x;
             b.y = tri_buffer[1].y - tri_buffer[0].y;
             b.z = tri_buffer[1].z - tri_buffer[0].z;
-
+            
             c.x = tri_buffer[2].x - tri_buffer[0].x;
             c.y = tri_buffer[2].y - tri_buffer[0].y;
             c.z = tri_buffer[2].z - tri_buffer[0].z;
-
+            
             normals.x = b.y * c.z - b.z * c.y;
             normals.y = b.z * c.x - b.x * c.z;
             normals.z = b.x * c.y - b.y * c.x;
-
-            n = sqrt(normals.x * normals.x + 
-                     normals.y * normals.y + 
-                     normals.z * normals.z);
+            
+            n = fabs(normals.x) + 
+                fabs(normals.y) + 
+                fabs(normals.z);
             
             normals.x /= n;
             normals.y /= n;
             normals.z /= n;
+            
 
             // Calculate visibility from a camera in position 0,0,0
-            vissibility = normals.x * tri[0].x +
-                          normals.y * tri[0].y +
-                          normals.z * tri[0].z;
-
-
-            printf("Normals %.6f | %.6f | %.6f \n", normals.x, normals.y, normals.z);
+            vissibility = normals.x * tri_buffer[0].x +
+                          normals.y * tri_buffer[0].y +
+                          normals.z * tri_buffer[0].z;
             if (vissibility < 0.0)
             {
                 out_memory[i    ] = tri_buffer[0].x;
@@ -119,6 +117,7 @@ void gpu_3d(ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<3
                 out_memory[i + 7] = tri_buffer[2].y;
                 out_memory[i + 8] = tri_buffer[2].z;
             }
+            tri_buffer_counter = 0;
         }
 
         //out_memory[i    ] = vec[0];
