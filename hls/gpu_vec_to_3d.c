@@ -11,6 +11,8 @@ void gpu_3d(ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<3
             hls_stable_argument hls_avalon_slave_register_argument float theta,
             hls_stable_argument hls_avalon_slave_register_argument float psi,
 
+            
+
             ihc::mm_master<float, ihc::aspace<2>, ihc::awidth<32>, ihc::dwidth<32> > &out_memory){
     
     hls_memory hls_singlepump hls_bankwidth(sizeof(float))
@@ -37,6 +39,7 @@ void gpu_3d(ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<3
     vec_3d b, c;
     vec_3d normals;
     float n;
+    float vissibility;
 
     hls_register
     int sample_size = end_addr - start_addr;
@@ -97,17 +100,25 @@ void gpu_3d(ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<3
             normals.y /= n;
             normals.z /= n;
 
-            printf("Normals %.6f | %.6f | %.6f \n", normals.x, normals.y, normals.z);
+            // Calculate visibility from a camera in position 0,0,0
+            vissibility = normals.x * tri[0].x +
+                          normals.y * tri[0].y +
+                          normals.z * tri[0].z;
 
-            out_memory[i    ] = tri_buffer[0].x;
-            out_memory[i + 1] = tri_buffer[0].y;
-            out_memory[i + 2] = tri_buffer[0].z;
-            out_memory[i + 3] = tri_buffer[1].x;
-            out_memory[i + 4] = tri_buffer[1].y;
-            out_memory[i + 5] = tri_buffer[1].z;
-            out_memory[i + 6] = tri_buffer[2].x;
-            out_memory[i + 7] = tri_buffer[2].y;
-            out_memory[i + 8] = tri_buffer[2].z;
+
+            printf("Normals %.6f | %.6f | %.6f \n", normals.x, normals.y, normals.z);
+            if (vissibility < 0.0)
+            {
+                out_memory[i    ] = tri_buffer[0].x;
+                out_memory[i + 1] = tri_buffer[0].y;
+                out_memory[i + 2] = tri_buffer[0].z;
+                out_memory[i + 3] = tri_buffer[1].x;
+                out_memory[i + 4] = tri_buffer[1].y;
+                out_memory[i + 5] = tri_buffer[1].z;
+                out_memory[i + 6] = tri_buffer[2].x;
+                out_memory[i + 7] = tri_buffer[2].y;
+                out_memory[i + 8] = tri_buffer[2].z;
+            }
         }
 
         //out_memory[i    ] = vec[0];

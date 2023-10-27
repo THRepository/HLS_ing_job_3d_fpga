@@ -413,6 +413,8 @@ int main()
     // Test set positions on vectors.
     position_cube(&c1_projected);
     rotate_cube(&c1_projected, PI/32, PI/16, PI/8, &custom_reference);
+    cross_product_on_all(&c1_projected);
+    in_camera_vision(&c1_projected, &camera);
 
     gpu_3d(in_vecs, 0, sample_size, 
            c1.pos.x, c1.pos.y, c1.pos.z, 
@@ -474,10 +476,6 @@ int main()
         loop += 1;
     }
     printf("Number of errors in 3d vector processes is : %d\n", errors);
-
-    cross_product_on_all(&c1_projected);
-
-    in_camera_vision(&c1_projected, &camera);
 
     projection_on_cube(maxx, maxy, Zfar, &projection_matrix, &c1_projected);
 
