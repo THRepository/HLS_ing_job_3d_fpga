@@ -12,9 +12,8 @@ void rotate_3d(vec_3d* p0, vec_3d* p, float Phi, float Theta, float Psi)
     if(Phi == 0.0 and Theta == 0.0 and Psi == 0.0){ // If all 3 angles are 0 do nothing.
         return;
     }
-
     vec_3d new_vec_rotate;
-    
+
     /*                    | 1     0          0     |
     Rx(Phi) = [x, y, z] * | 0  cos(Phi)  -sin(Phi) |
                           | 0  sin(Phi)   cos(Phi) |*/
@@ -173,18 +172,19 @@ void cross_product_of_triangle(triangle* t)
     c.x = t->tri[2].x - t->tri[0].x;
     c.y = t->tri[2].y - t->tri[0].y;
     c.z = t->tri[2].z - t->tri[0].z;
-
+    
     // Mnemonic
     t->normal.x = b.y * c.z - b.z * c.y;
     t->normal.y = b.z * c.x - b.x * c.z;
     t->normal.z = b.x * c.y - b.y * c.x;
-
+    
     // normalisering till unit vector (vektor med en magnitud som exakt är 1).
     float n = sqrt(t->normal.x * t->normal.x + t->normal.y * t->normal.y + t->normal.z * t->normal.z);
-
+    //printf("%.6f\n", n);
     t->normal.x /= n;
     t->normal.y /= n;
     t->normal.z /= n;
+    printf("%.6f, %.6f, %.6f\n", t->normal.x, t->normal.y, t->normal.z);
 }
 
 void cross_product_on_all(mesh_cube * c)
@@ -244,6 +244,16 @@ void position_cube(mesh_cube* c)
 
 int main()
 {
+    float x_pos = 10.0;
+    float y_pos = 10.0;
+    float z_pos = 10.0;
+    float phi = 1.0;
+    float theta = 0.0;
+    float psi = 0.0;
+    float x_ref = 0.0;
+    float y_ref = 0.0;
+    float z_ref = 0.0;
+
     fixed_16_9_t samples[sample_size] = {
                             0.0, 0.0, 0.0, // South 1
                             0.0, 1.0, 0.0,
@@ -293,9 +303,9 @@ int main()
                             0.0, 0.0, 0.0,
                             1.0, 0.0, 0.0,
                         };
-    fixed_16_9_t input_vars[9] = {0.0, 0.0, 0.0,
-                                  0.0, 0.0, 0.0,
-                                  0.0, 0.0, 0.0};
+    fixed_16_9_t input_vars[9] = {(fixed_16_9_t) x_pos, (fixed_16_9_t) y_pos, (fixed_16_9_t) z_pos,
+                                  (fixed_16_9_t) phi, (fixed_16_9_t) theta, (fixed_16_9_t) psi,
+                                  (fixed_16_9_t) x_ref, (fixed_16_9_t) y_ref, (fixed_16_9_t) z_ref};
     int8 output_data[sample_size + sample_size/9];
 
     // mm_master interface class instance
@@ -367,11 +377,11 @@ int main()
     // Bot //
 
     // cube position.
-    c1.pos.x = 0.0;  c1.pos.y  = 0.0; c1.pos.z = 3.0;
+    c1.pos.x = x_pos;  c1.pos.y  = y_pos; c1.pos.z = z_pos;
 
     vec_3d custom_reference;
     //custom_reference.x = c1.pos.x + 0.5; custom_reference.y = c1.pos.y + 0.5; custom_reference.z = c1.pos.z + 0.5;
-    custom_reference.x = 0; custom_reference.y = 0; custom_reference.z = 0;
+    custom_reference.x = x_ref; custom_reference.y = y_ref; custom_reference.z = z_ref;
 
     int maxx  =  380; // (getmaxx()/2);
     int maxy  =  380;
@@ -397,7 +407,7 @@ int main()
     // Test set positions on vectors.
 
     position_cube(&c1_projected);
-    rotate_cube(&c1_projected, PI/32, PI/16, PI/8, &custom_reference);
+    rotate_cube(&c1_projected, phi*PI, theta*PI, psi*PI, &custom_reference);
     cross_product_on_all(&c1_projected);
     in_camera_vision(&c1_projected, &camera);
 
@@ -408,10 +418,19 @@ int main()
     int loop = 0;
     int errors = 0;
     float dif = 0.0;
-    printf("x : %d, y : %d, z : %d, v : \n", mm_mem_out[0].to_int(), mm_mem_out[1].to_int(), mm_mem_out[2].to_int());
-    printf("x : %d, y : %d, z : %d, v : \n", mm_mem_out[3].to_int(), mm_mem_out[4].to_int(), mm_mem_out[5].to_int());
-    printf("x : %d, y : %d, z : %d, v : \n", mm_mem_out[6].to_int(), mm_mem_out[7].to_int(), mm_mem_out[8].to_int());
+    printf("comp => x : %d, y : %d, z : %d\n", mm_mem_out[0].to_int(), mm_mem_out[1].to_int(), mm_mem_out[2].to_int());
+    printf("soft => x : %d, y : %d, z : %d\n", (int) c1_projected.tris[0].tri[0].x, (int) c1_projected.tris[0].tri[0].y, (int) c1_projected.tris[0].tri[0].z);
 
+    printf("comp => x : %d, y : %d, z : %d\n", mm_mem_out[3].to_int(), mm_mem_out[4].to_int(), mm_mem_out[5].to_int());
+    printf("soft => x : %d, y : %d, z : %d\n", (int) c1_projected.tris[0].tri[1].x, (int) c1_projected.tris[0].tri[1].y, (int) c1_projected.tris[0].tri[1].z);
+    
+    printf("comp => x : %d, y : %d, z : %d\n", mm_mem_out[6].to_int(), mm_mem_out[7].to_int(), mm_mem_out[8].to_int());
+    printf("soft => x : %d, y : %d, z : %d\n", (int) c1_projected.tris[0].tri[2].x, (int) c1_projected.tris[0].tri[2].y, (int) c1_projected.tris[0].tri[2].z);
+    
+    printf("comp => v : %d\n", mm_mem_out[9].to_int());
+    printf("soft => v : %.6f\n", c1_projected.tris[0].vissibility);
+
+    
     /*
     for(int i = 0; i < sample_size && loop < 12;)
     {
