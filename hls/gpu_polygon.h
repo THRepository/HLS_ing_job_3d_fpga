@@ -9,7 +9,7 @@
 #include "HLS/ac_fixed_math.h"
 #include "HLS/ac_int.h"
 
-typedef ac_fixed<16, 9, true> fixed_16_9_t;
+typedef ac_fixed<32, 16, true> fixed_16_9_t;
 
 typedef ihc::mm_master<fixed_16_9_t,    ihc::aspace<1>, 
                        ihc::awidth<16>, ihc::dwidth<16>, 
@@ -25,7 +25,6 @@ typedef ihc::mm_master<int8,            ihc::aspace<3>,
                        ihc::awidth<16>, ihc::dwidth<16>, 
                        ihc::align<16>,  ihc::latency<1>, 
                        ihc::waitrequest<true> >          output_memory_type;
-
 component
 void gpu_polygon(uint8 addr,
                  input_memory_type  &in_memory,
