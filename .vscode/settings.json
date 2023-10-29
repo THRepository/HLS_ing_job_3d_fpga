@@ -5,6 +5,10 @@
         "test_bench.h": "c",
         "algorithm": "c",
         "gpu_vec_to_3d.h": "c",
-        "queue": "c"
+        "queue": "c",
+        "ostream": "c",
+        "memory": "c",
+        "stdlib.h": "c",
+        "math.h": "c"
     }
 }
