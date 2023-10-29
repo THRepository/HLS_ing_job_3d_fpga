@@ -244,7 +244,7 @@ void position_cube(mesh_cube* c)
 
 int main()
 {
-    float samples[sample_size] = {
+    fixed_16_9_t samples[sample_size] = {
                             0.0, 0.0, 0.0, // South 1
                             0.0, 1.0, 0.0,
                             1.0, 1.0, 0.0,
@@ -293,31 +293,15 @@ int main()
                             0.0, 0.0, 0.0,
                             1.0, 0.0, 0.0,
                         };
-    float sample_prossesed[sample_size];
-
-    vec_3d samples_from_input_0[num_triangles];
-    vec_3d samples_from_input_1[num_triangles];
-    vec_3d samples_from_input_2[num_triangles];
-    vec_3d samples_from_add_0[num_triangles];
-    vec_3d samples_from_add_1[num_triangles];
-    vec_3d samples_from_add_2[num_triangles];
-
-    //streams
-    ihc::stream_out<vec_3d> stream_from_input_0;
-    ihc::stream_out<vec_3d> stream_from_input_1;
-    ihc::stream_out<vec_3d> stream_from_input_2;
-
-    ihc::stream_in<vec_3d> stream_to_add_0;
-    ihc::stream_in<vec_3d> stream_to_add_1;
-    ihc::stream_in<vec_3d> stream_to_add_2;
-
-    ihc::stream_out<vec_3d> stream_from_add_0;
-    ihc::stream_out<vec_3d> stream_from_add_1;
-    ihc::stream_out<vec_3d> stream_from_add_2;
+    fixed_16_9_t input_vars[9] = {0.0, 0.0, 0.0,
+                                  0.0, 0.0, 0.0,
+                                  0.0, 0.0, 0.0};
+    int8 output_data[sample_size + sample_size/9];
 
     // mm_master interface class instance
-    ihc::mm_master<float, ihc::aspace<1>, ihc::awidth<32>, ihc::dwidth<32> > in_vecs(samples, sizeof(float)*108);
-    ihc::mm_master<float, ihc::aspace<2>, ihc::awidth<32>, ihc::dwidth<32> > out_vecs(sample_prossesed, sizeof(float)*108);
+    input_memory_type  mm_mem_in (samples,     sizeof(fixed_16_9_t)*sample_size);
+    var_memory_type    mm_mem_var(input_vars,  sizeof(fixed_16_9_t)*9);
+    output_memory_type mm_mem_out(output_data, sizeof(int8)*(sample_size + sample_size/9));
 
 ///// Prepere sofware cube
     mesh_cube c1, c1_projected;
@@ -411,19 +395,24 @@ int main()
     printf("Test start!\n");
 
     // Test set positions on vectors.
+
     position_cube(&c1_projected);
     rotate_cube(&c1_projected, PI/32, PI/16, PI/8, &custom_reference);
     cross_product_on_all(&c1_projected);
     in_camera_vision(&c1_projected, &camera);
 
-    gpu_3d(in_vecs, 0, sample_size, 
-           c1.pos.x, c1.pos.y, c1.pos.z, 
-           PI/32, PI/16, PI/8, 
-           out_vecs);
+
+    gpu_polygon(0, mm_mem_in, mm_mem_var, mm_mem_out);
+    
 
     int loop = 0;
     int errors = 0;
     float dif = 0.0;
+    printf("x : %d, y : %d, z : %d, v : \n", mm_mem_out[0].to_int(), mm_mem_out[1].to_int(), mm_mem_out[2].to_int());
+    printf("x : %d, y : %d, z : %d, v : \n", mm_mem_out[3].to_int(), mm_mem_out[4].to_int(), mm_mem_out[5].to_int());
+    printf("x : %d, y : %d, z : %d, v : \n", mm_mem_out[6].to_int(), mm_mem_out[7].to_int(), mm_mem_out[8].to_int());
+
+    /*
     for(int i = 0; i < sample_size && loop < 12;)
     {
         if(c1_projected.tris[loop].vissibility < 0.0)
@@ -479,7 +468,7 @@ int main()
 
         }
         loop += 1;
-    }
+    }*/
     printf("Number of errors in 3d vector processes is : %d\n", errors);
 
     projection_on_cube(maxx, maxy, Zfar, &projection_matrix, &c1_projected);

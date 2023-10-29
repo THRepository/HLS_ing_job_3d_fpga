@@ -5,18 +5,18 @@
 #ifndef PROJECT_SHARED_INC_DEF_FIR_FILTER_
 #define PROJECT_SHARED_INC_DEF_FIR_FILTER_
     #include "HLS/hls.h"
+#endif
 
-    typedef struct vector_3d{
+#include "gpu_polygon.h"
+
+#include <math.h>
+#include <stdlib.h>
+
+typedef struct vector_3d{
         float x;
         float y;
         float z;
     }vec_3d;
-#endif
-
-#include "gpu_vec_to_3d.h"
-
-#include <math.h>
-#include <stdlib.h>
 
 typedef struct polygon_3s{
     vec_3d tri[3];
