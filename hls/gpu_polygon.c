@@ -10,13 +10,25 @@ void gpu_polygon(uint8 addr,
                  var_memory_type    &var_memory,
                  output_memory_type &out_memory){
     fixed_16_9_t vectors[10];
+    fixed_16_9_t vectors_copy[9];
     fixed_16_9_t vars[9];
+    fixed_16_9_t sin[3];
+    fixed_16_9_t cos[3];
+    fixed_16_9_t rot_phi[3][3];
+    fixed_16_9_t rot_theta[3][3];
+    fixed_16_9_t rot_psi[3][3];
 
     #pragma unroll 1
     for(uint5 i = 0; i < 9; i++)
     {
         vectors[i] = in_memory[addr + i];
         vars[i]    = var_memory[i];
+    }
+
+    for(uint2 i = 0; i < 3; i++)
+    {
+        sin[i] = sinpi_fixed(var_memory[i + 3]);
+        cos[i] = cospi_fixed(var_memory[i + 3]);
     }
 
     #pragma unroll 1
@@ -27,33 +39,100 @@ void gpu_polygon(uint8 addr,
         vectors[i*3 + 2] = vectors[i*3 + 2] + var_memory[2] - var_memory[8];
     }
 
-    fixed_16_9_t sin[3];
-    fixed_16_9_t cos[3];
+    rot_phi[0][0] = 1.0;
+    rot_phi[0][1] = 0.0;
+    rot_phi[0][2] = 0.0;
+    rot_phi[1][0] = 0.0;
+    rot_phi[1][1] = cos[phi];
+    rot_phi[1][2] = -sin[phi];
+    rot_phi[2][0] = 0.0;
+    rot_phi[2][1] = sin[phi];
+    rot_phi[2][2] = cos[phi];
 
+    rot_theta[0][0] = cos[theta];
+    rot_theta[0][1] = 0.0;
+    rot_theta[0][2] = sin[theta];
+    rot_theta[1][0] = 0.0;
+    rot_theta[1][1] = 1.1;
+    rot_theta[1][2] = 0.0;
+    rot_theta[2][0] = -sin[theta];
+    rot_theta[2][1] = 0.0;
+    rot_theta[2][2] = cos[theta];
+
+    rot_psi[0][0] = cos[psi];
+    rot_psi[0][1] = -sin[psi];
+    rot_psi[0][2] = 0.0;
+    rot_psi[1][0] = sin[psi];
+    rot_psi[1][1] = cos[psi];
+    rot_psi[1][2] = 0.0;
+    rot_psi[2][0] = 0.0;
+    rot_psi[2][1] = 0.0;
+    rot_psi[2][2] = 1.0;
+
+    // vectors[3*i]     *=     cos[theta]*cos[psi] 
+        //                   + cos[theta]*sin[psi] 
+        //                   - sin[theta];
+
+        // vectors[3*i + 1] *= sin[phi]*sin[theta]*cos[psi] - cos[phi]*sin[psi]
+        //                   + sin[phi]*sin[theta]*sin[psi] + cos[phi]*cos[psi] 
+        //                   + sin[phi]*cos[theta];
+
+        // vectors[3*i + 2] *= cos[phi]*sin[theta]*cos[psi] + sin[phi]*sin[psi] 
+        //                   + cos[phi]*sin[theta]*sin[psi] - sin[phi]*cos[psi] 
+        //                   + cos[phi]*cos[theta];
+    #pragma max_concurrency 1
     for(uint2 i = 0; i < 3; i++)
-    {
-        sin[i] = sinpi_fixed(var_memory[i + 3]);
-        cos[i] = cospi_fixed(var_memory[i + 3]);
+    {   
+        vectors_copy[i*3    ] = 0.0;
+        vectors_copy[i*3 + 1] = 0.0;
+        vectors_copy[i*3 + 2] = 0.0;
+        #pragma max_concurrency 1
+        for(uint2 row = 0; row < 3; row++)
+        {
+            vectors_copy[i*3    ] += vectors[i*3    ] * rot_phi[0][row];
+            vectors_copy[i*3 + 1] += vectors[i*3 + 1] * rot_phi[1][row];
+            vectors_copy[i*3 + 2] += vectors[i*3 + 2] * rot_phi[2][row];
+        }   
+        vectors[i*3    ] = vectors_copy[i*3];
+        vectors[i*3 + 1] = vectors_copy[i*3 + 1];
+        vectors[i*3 + 2] = vectors_copy[i*3 + 2];
     }
-    for(uint2 i = 0; i < 3; i++) // 0 = phi x | 1 = theta y | 2 = psi z
-    {
-        vectors[3*i]     *= cos[theta]*cos[psi] 
-                          + cos[theta]*sin[psi] 
-                          - sin[theta];
-
-        vectors[3*i + 1] *= sin[phi]*sin[theta]*cos[psi] - cos[phi]*sin[psi]
-                          + sin[phi]*sin[theta]*sin[psi] + cos[phi]*cos[psi] 
-                          + sin[phi]*cos[theta];
-
-        vectors[3*i + 2] *= cos[phi]*sin[theta]*cos[psi] + sin[phi]*sin[psi] 
-                          + cos[phi]*sin[theta]*sin[psi] - sin[phi]*cos[psi] 
-                          + cos[phi]*cos[theta];
-
-        // vectors[3*i]     *= ( -sin[theta] + cos[theta] ) * ( sin[psi]   + cos[psi] );
-        // vectors[3*i + 1] *= ( -sin[psi]   + cos[psi] )   * ( sin[phi]   + cos[phi] );
-        // vectors[3*i + 2] *= ( -sin[phi]   + cos[phi] )   * ( sin[theta] + cos[theta] );
+    #pragma max_concurrency 1
+    for(uint2 i = 0; i < 3; i++)
+    {   
+        vectors_copy[i*3    ] = 0.0;
+        vectors_copy[i*3 + 1] = 0.0;
+        vectors_copy[i*3 + 2] = 0.0;
+        #pragma max_concurrency 1
+        for(uint2 row = 0; row < 3; row++)
+        {
+            vectors_copy[i*3    ] += vectors[i*3    ] * rot_theta[0][row];
+            vectors_copy[i*3 + 1] += vectors[i*3 + 1] * rot_theta[1][row];
+            vectors_copy[i*3 + 2] += vectors[i*3 + 2] * rot_theta[2][row];
+        }   
+        vectors[i*3    ] = vectors_copy[i*3];
+        vectors[i*3 + 1] = vectors_copy[i*3 + 1];
+        vectors[i*3 + 2] = vectors_copy[i*3 + 2];
+    }
+    #pragma max_concurrency 1
+    for(uint2 i = 0; i < 3; i++)
+    {   
+        vectors_copy[i*3    ] = 0.0;
+        vectors_copy[i*3 + 1] = 0.0;
+        vectors_copy[i*3 + 2] = 0.0;
+        #pragma max_concurrency 1
+        for(uint2 row = 0; row < 3; row++)
+        {
+            vectors_copy[i*3    ] += vectors[i*3    ] * rot_psi[0][row];
+            vectors_copy[i*3 + 1] += vectors[i*3 + 1] * rot_psi[1][row];
+            vectors_copy[i*3 + 2] += vectors[i*3 + 2] * rot_psi[2][row];
+        }   
+        vectors[i*3    ] = vectors_copy[i*3];
+        vectors[i*3 + 1] = vectors_copy[i*3 + 1];
+        vectors[i*3 + 2] = vectors_copy[i*3 + 2];
     }
 
+    #pragma unroll 1
     for(uint2 i = 0; i < 3; i++)
     {
         vectors[3*i]     += var_memory[6];
@@ -65,6 +144,7 @@ void gpu_polygon(uint8 addr,
     fixed_16_9_t c[3];
     fixed_16_9_t normal[3];
 
+    #pragma unroll 1
     for(uint2 i = 0; i < 3; i++) // tree edges.
     {
         b[i] = vectors[i + 3] - vectors[i];

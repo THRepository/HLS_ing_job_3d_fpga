@@ -184,7 +184,6 @@ void cross_product_of_triangle(triangle* t)
     t->normal.x /= n;
     t->normal.y /= n;
     t->normal.z /= n;
-    printf("%.6f, %.6f, %.6f\n", t->normal.x, t->normal.y, t->normal.z);
 }
 
 void cross_product_on_all(mesh_cube * c)
